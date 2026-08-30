@@ -204,7 +204,7 @@ function PostsPage() {
       ) : error ? (
         <ErrorState message={error.message} onRetry={refresh} />
       ) : filtered.length === 0 ? (
-        <EmptyState actionLabel={dirty ? "Clear filters" : undefined} onAction={dirty ? reset : undefined} />
+        dirty ? <EmptyState actionLabel="Clear filters" onAction={reset} /> : <EmptyState />
       ) : (
         <div
           className={cn(

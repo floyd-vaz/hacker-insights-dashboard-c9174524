@@ -150,7 +150,6 @@ function Nav() {
                   to={to}
                   activeOptions={{ exact: to === "/" }}
                   className="group relative inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[status=active]:text-foreground"
-                  activeProps={{ "data-active": "true" }}
                 >
                   {({ isActive }) => (
                     <>

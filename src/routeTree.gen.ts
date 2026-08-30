@@ -10,33 +10,73 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DailySentimentRouteImport } from './routes/daily-sentiment'
+import { Route as PostsRouteImport } from './routes/posts'
+import { Route as StatsRouteImport } from './routes/stats'
+import { Route as TopPostsRouteImport } from './routes/top-posts'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DailySentimentRoute = DailySentimentRouteImport.update({
+  id: '/daily-sentiment',
+  path: '/daily-sentiment',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PostsRoute = PostsRouteImport.update({
+  id: '/posts',
+  path: '/posts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatsRoute = StatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TopPostsRoute = TopPostsRouteImport.update({
+  id: '/top-posts',
+  path: '/top-posts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/daily-sentiment': typeof DailySentimentRoute
+  '/posts': typeof PostsRoute
+  '/stats': typeof StatsRoute
+  '/top-posts': typeof TopPostsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/daily-sentiment': typeof DailySentimentRoute
+  '/posts': typeof PostsRoute
+  '/stats': typeof StatsRoute
+  '/top-posts': typeof TopPostsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/daily-sentiment': typeof DailySentimentRoute
+  '/posts': typeof PostsRoute
+  '/stats': typeof StatsRoute
+  '/top-posts': typeof TopPostsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/daily-sentiment' | '/posts' | '/stats' | '/top-posts'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/daily-sentiment' | '/posts' | '/stats' | '/top-posts'
+  id: '__root__' | '/' | '/daily-sentiment' | '/posts' | '/stats' | '/top-posts'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DailySentimentRoute: typeof DailySentimentRoute
+  PostsRoute: typeof PostsRoute
+  StatsRoute: typeof StatsRoute
+  TopPostsRoute: typeof TopPostsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +88,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/daily-sentiment': {
+      id: '/daily-sentiment'
+      path: '/daily-sentiment'
+      fullPath: '/daily-sentiment'
+      preLoaderRoute: typeof DailySentimentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/posts': {
+      id: '/posts'
+      path: '/posts'
+      fullPath: '/posts'
+      preLoaderRoute: typeof PostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stats': {
+      id: '/stats'
+      path: '/stats'
+      fullPath: '/stats'
+      preLoaderRoute: typeof StatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/top-posts': {
+      id: '/top-posts'
+      path: '/top-posts'
+      fullPath: '/top-posts'
+      preLoaderRoute: typeof TopPostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DailySentimentRoute: DailySentimentRoute,
+  PostsRoute: PostsRoute,
+  StatsRoute: StatsRoute,
+  TopPostsRoute: TopPostsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
