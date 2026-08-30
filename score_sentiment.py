@@ -1,46 +1,47 @@
 """
 score_sentiment.py
 
-Reads posts from hn_data.db that haven't been scored yet, sends them to
-Gemini in small batches, gets back a sentiment score (-1 to 1) and a short
-reason for each, and saves the results back into the database.
+Reads posts from Postgres that haven't been scored yet, sends them to
+Gemini in small batches, and saves sentiment scores + reasons back.
 
 Setup:
-    pip install google-generativeai python-dotenv
-    Create a .env file in this folder with:
-        GEMINI_API_KEY=your_key_here
+    pip install google-generativeai psycopg2-binary python-dotenv
+    .env needs both DATABASE_URL and GEMINI_API_KEY.
 """
 
-import sqlite3
+import os
 import json
 import time
-import os
+
+import psycopg2
 from dotenv import load_dotenv
 import google.generativeai as genai
 
 load_dotenv()
 
-DB_PATH = "hn_data.db"
-BATCH_SIZE = 5  # how many posts to send to Gemini per request
+DATABASE_URL = os.environ["DATABASE_URL"]
+BATCH_SIZE = 5
 
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 model = genai.GenerativeModel("gemini-2.5-flash")
 
 
+def get_conn():
+    return psycopg2.connect(DATABASE_URL)
+
+
 def get_unscored_posts(conn, limit=200):
-    cur = conn.cursor()
-    cur.execute("""
-        SELECT id, title FROM posts
-        WHERE sentiment_score IS NULL
-        LIMIT ?
-    """, (limit,))
-    return cur.fetchall()
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT id, title FROM posts
+            WHERE sentiment_score IS NULL
+            LIMIT %s
+        """, (limit,))
+        return cur.fetchall()
 
 
 def build_prompt(posts_batch):
-    """posts_batch is a list of (id, title) tuples."""
     items_text = "\n".join(f'- id={pid}: "{title}"' for pid, title in posts_batch)
-
     return f"""You are analyzing Hacker News post titles about AI/tech topics.
 For each post below, give a sentiment score from -1 (very negative) to 1 (very positive),
 reflecting the tone/reaction the title implies, plus a short one-sentence reason.
@@ -65,7 +66,6 @@ def score_batch(posts_batch, max_retries=3):
             response = model.generate_content(prompt)
             text = response.text.strip()
 
-            # Strip accidental markdown fences if the model adds them
             if text.startswith("```"):
                 text = text.strip("`")
                 if text.startswith("json"):
@@ -80,7 +80,7 @@ def score_batch(posts_batch, max_retries=3):
             return []
 
         except Exception as e:
-            wait = 2 ** attempt  # exponential backoff: 2s, 4s, 8s
+            wait = 2 ** attempt
             print(f"  Attempt {attempt} failed ({type(e).__name__}: {e}). Retrying in {wait}s...")
             time.sleep(wait)
 
@@ -89,22 +89,23 @@ def score_batch(posts_batch, max_retries=3):
 
 
 def save_scores(conn, results):
-    cur = conn.cursor()
-    for r in results:
-        cur.execute("""
-            UPDATE posts
-            SET sentiment_score = ?, sentiment_reason = ?
-            WHERE id = ?
-        """, (r.get("sentiment_score"), r.get("reason"), r.get("id")))
+    with conn.cursor() as cur:
+        for r in results:
+            cur.execute("""
+                UPDATE posts
+                SET sentiment_score = %s, sentiment_reason = %s
+                WHERE id = %s
+            """, (r.get("sentiment_score"), r.get("reason"), r.get("id")))
     conn.commit()
 
 
 def main():
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
     posts = get_unscored_posts(conn)
 
     if not posts:
         print("No unscored posts found. Run fetch_hn_data.py first, or everything is already scored.")
+        conn.close()
         return
 
     print(f"Found {len(posts)} unscored posts. Scoring in batches of {BATCH_SIZE}...")
@@ -119,7 +120,6 @@ def main():
             for r in results:
                 print(f"  id={r.get('id')} score={r.get('sentiment_score')} reason={r.get('reason')}")
 
-        # Small delay to stay comfortably within free-tier rate limits
         time.sleep(1)
 
     conn.close()

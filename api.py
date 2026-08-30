@@ -1,25 +1,29 @@
 """
 api.py
 
-FastAPI server that exposes sentiment data shaped to match the frontend's
-existing TypeScript interfaces (Post, DailySentiment, Stats) exactly, so the
-React app can swap its mock data layer for this with zero UI changes.
+FastAPI server that reads from Postgres and exposes data shaped to match
+the frontend's Post/Stats/DailySentiment TypeScript interfaces exactly.
 
 Setup:
-    pip install fastapi uvicorn pandas
+    pip install fastapi uvicorn psycopg2-binary python-dotenv pandas
+    .env needs DATABASE_URL.
 
 Run with:
     uvicorn api:app --reload --port 8000
 """
 
-import sqlite3
+import os
 from datetime import datetime, timezone
 
 import pandas as pd
+import psycopg2
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-DB_PATH = "hn_data.db"
+load_dotenv()
+
+DATABASE_URL = os.environ["DATABASE_URL"]
 
 app = FastAPI(title="HN Sentiment API")
 
@@ -30,8 +34,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Same keyword groups used to filter posts during fetch — reused here to tag
-# each post with a "topic" for the frontend's company filter/breakdown.
 TOPIC_KEYWORDS = {
     "Claude": ["claude", "anthropic"],
     "Gemini": ["gemini", "google"],
@@ -48,7 +50,7 @@ def derive_topic(title: str) -> str:
 
 
 def get_df() -> pd.DataFrame:
-    conn = sqlite3.connect(DB_PATH)
+    conn = psycopg2.connect(DATABASE_URL)
     df = pd.read_sql_query("""
         SELECT id, title, url, score, author, created_at, comments,
                sentiment_score, sentiment_reason
@@ -80,7 +82,6 @@ def post_to_json(row) -> dict:
 
 @app.get("/posts")
 def get_posts():
-    """Matches: api.getPosts() -> Post[]"""
     df = get_df()
     if df.empty:
         return []
@@ -90,7 +91,6 @@ def get_posts():
 
 @app.get("/stats")
 def get_stats():
-    """Matches: api.getStats() -> Stats"""
     df = get_df()
     if df.empty:
         return {
@@ -135,7 +135,6 @@ def get_stats():
 
 @app.get("/daily-sentiment")
 def get_daily_sentiment(days: int = 30):
-    """Matches: api.getDailySentiment(days) -> DailySentiment[]"""
     df = get_df()
     if df.empty:
         return []
@@ -161,7 +160,6 @@ def get_daily_sentiment(days: int = 30):
 
 @app.get("/top-posts")
 def get_top_posts(limit: int = 8):
-    """Matches: api.getTopPosts() -> { positive: Post[], negative: Post[] }"""
     df = get_df()
     if df.empty:
         return {"positive": [], "negative": []}
