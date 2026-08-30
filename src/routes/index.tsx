@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, CalendarRange, Gauge, MessagesSquare } from "lucide-react";
-import { api, formatDate, type DailySentiment, type Stats } from "@/data/mockData";
+import { formatDate, type DailySentiment, type Stats } from "@/data/mockData";
+import { api } from "@/data/api";
 import { useEndpoint } from "@/hooks/useEndpoint";
 import {
   ChartSkeleton,

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CalendarRange, Gauge, MessagesSquare } from "lucide-react";
-import { api, formatDate, type Stats } from "@/data/mockData";
+import { formatDate, type Stats } from "@/data/mockData";
+import { api } from "@/data/api";
 import { useEndpoint } from "@/hooks/useEndpoint";
 import {
   CountUp,

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { api, formatDate, type DailySentiment } from "@/data/mockData";
+import { formatDate, type DailySentiment } from "@/data/mockData";
+import { api } from "@/data/api";
 import { useEndpoint } from "@/hooks/useEndpoint";
 import {
   ChartSkeleton,

@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { ThumbsDown, ThumbsUp } from "lucide-react";
-import { api, type Post } from "@/data/mockData";
+import { type Post } from "@/data/mockData";
+import { api } from "@/data/api";
 import { useEndpoint } from "@/hooks/useEndpoint";
 import {
   CardSkeleton,

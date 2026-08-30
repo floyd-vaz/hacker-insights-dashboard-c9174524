@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { LayoutGrid, List, Search, X } from "lucide-react";
-import { api, type Post, type Topic } from "@/data/mockData";
+import { type Post, type Topic } from "@/data/mockData";
+import { api } from "@/data/api";
 import { useEndpoint } from "@/hooks/useEndpoint";
 import {
   CardSkeleton,
