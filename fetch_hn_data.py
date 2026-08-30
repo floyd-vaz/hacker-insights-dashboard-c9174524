@@ -86,9 +86,24 @@ def save_post(conn, item):
     conn.commit()
 
 
+def cleanup_old_posts(conn, max_age_days=90):
+    """Delete posts older than max_age_days to keep the database from growing forever."""
+    cur = conn.cursor()
+    cur.execute("""
+        DELETE FROM posts
+        WHERE created_at < datetime('now', ?)
+    """, (f"-{max_age_days} days",))
+    deleted = cur.rowcount
+    conn.commit()
+    if deleted:
+        print(f"Deleted {deleted} posts older than {max_age_days} days.")
+
+
 def main():
     init_db()
     conn = sqlite3.connect(DB_PATH)
+
+    cleanup_old_posts(conn, max_age_days=90)
 
     print("Fetching top story IDs...")
     story_ids = get_story_ids("topstories", limit=200)

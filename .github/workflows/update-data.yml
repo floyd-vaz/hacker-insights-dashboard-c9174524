@@ -1,0 +1,40 @@
+name: Update HN Sentiment Data
+
+on:
+  schedule:
+    # Runs every 4 hours (cron uses UTC time)
+    - cron: "0 */4 * * *"
+  workflow_dispatch: {}  # lets you trigger it manually from the GitHub Actions tab too
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install requests google-generativeai python-dotenv
+
+      - name: Fetch new HN posts (and prune posts older than 90 days)
+        run: python fetch_hn_data.py
+
+      - name: Score new posts with Gemini
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python score_sentiment.py
+
+      - name: Commit and push updated database
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add hn_data.db
+          git diff --staged --quiet || git commit -m "Auto-update sentiment data [skip ci]"
+          git push
