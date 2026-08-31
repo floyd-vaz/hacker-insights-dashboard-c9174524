@@ -2,7 +2,17 @@
 
 A live sentiment analytics dashboard that tracks how Hacker News reacts to AI companies (Claude, Gemini, and OpenAI) over time — built end-to-end from data collection to a deployed, self-updating web app.
 
-**Live demo:** [add your Vercel URL here]
+**Live demo:** [https://hacker-insights-dashboard-c9174524.vercel.app/]
+
+---
+
+## Screenshots
+
+![Dashboard overview](./screenshots/overview.png)
+*Sentiment trend and top-level stats*
+
+![Post feed](./screenshots/posts.png)
+*Most positive and most negative posts, with reasons*
 
 ---
 
