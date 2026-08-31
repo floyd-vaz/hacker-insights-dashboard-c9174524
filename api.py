@@ -18,29 +18,19 @@ from datetime import datetime, timezone
 import pandas as pd
 import psycopg2
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
 
 load_dotenv()
 
 DATABASE_URL = os.environ["DATABASE_URL"]
 
-limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="HN Sentiment API")
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",   # local dev (adjust if your dev port differs)
-        "http://localhost:5173",   # local dev (Vite default port)
-        "https://hacker-insights-dashboard-c9174524-fp3ctc08n-fpc2.vercel.app",  # replace with your real deployed frontend URL
-    ],
-    allow_methods=["GET"],  # this API is read-only — no need to allow POST/PUT/DELETE
+    allow_origins=["*"],  # local dev only — tighten before deploying publicly
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -91,8 +81,7 @@ def post_to_json(row) -> dict:
 
 
 @app.get("/posts")
-@limiter.limit("30/minute")
-def get_posts(request: Request):
+def get_posts():
     df = get_df()
     if df.empty:
         return []
@@ -101,8 +90,7 @@ def get_posts(request: Request):
 
 
 @app.get("/stats")
-@limiter.limit("30/minute")
-def get_stats(request: Request):
+def get_stats():
     df = get_df()
     if df.empty:
         return {
@@ -146,8 +134,7 @@ def get_stats(request: Request):
 
 
 @app.get("/daily-sentiment")
-@limiter.limit("30/minute")
-def get_daily_sentiment(request: Request, days: int = 30):
+def get_daily_sentiment(days: int = 30):
     df = get_df()
     if df.empty:
         return []
@@ -172,8 +159,7 @@ def get_daily_sentiment(request: Request, days: int = 30):
 
 
 @app.get("/top-posts")
-@limiter.limit("30/minute")
-def get_top_posts(request: Request, limit: int = 8):
+def get_top_posts(limit: int = 8):
     df = get_df()
     if df.empty:
         return {"positive": [], "negative": []}
