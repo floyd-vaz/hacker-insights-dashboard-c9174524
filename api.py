@@ -36,10 +36,13 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://hacker-insights-dashboard-c9174524.vercel.app",  # your actual production domain
+        "https://hacker-insights-dashboard-c9174524.vercel.app",  # stable production domain
         "http://localhost:3000",      # local dev
         "http://localhost:5173",      # local dev (Vite default port)
     ],
+    # Also allow any Vercel preview deployment for this project (they get a
+    # new random URL like ...-r28mc2y97-fpc2.vercel.app on every deploy).
+    allow_origin_regex=r"https://hacker-insights-dashboard-c9174524.*\.vercel\.app",
     allow_methods=["GET"],
     allow_headers=["*"],
 )
