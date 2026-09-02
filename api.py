@@ -18,19 +18,29 @@ from datetime import datetime, timezone
 import pandas as pd
 import psycopg2
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 load_dotenv()
 
 DATABASE_URL = os.environ["DATABASE_URL"]
 
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="HN Sentiment API")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # local dev only — tighten before deploying publicly
-    allow_methods=["*"],
+    allow_origins=[
+        "https://hacker-insights-dashboard-c9174524.vercel.app",  # your actual production domain
+        "http://localhost:3000",      # local dev
+        "http://localhost:5173",      # local dev (Vite default port)
+    ],
+    allow_methods=["GET"],
     allow_headers=["*"],
 )
 
@@ -68,20 +78,21 @@ def get_df() -> pd.DataFrame:
 def post_to_json(row) -> dict:
     return {
         "id": str(row["id"]),
-        "title": row["title"],
-        "author": row["author"],
+        "title": row["title"] if pd.notna(row["title"]) else None,
+        "author": row["author"] if pd.notna(row["author"]) else None,
         "points": int(row["score"]) if pd.notna(row["score"]) else 0,
         "comments": int(row["comments"]) if pd.notna(row["comments"]) else 0,
         "topic": row["topic"],
         "sentiment": round(float(row["sentiment_score"]), 3),
-        "reason": row["sentiment_reason"],
+        "reason": row["sentiment_reason"] if pd.notna(row["sentiment_reason"]) else None,
         "createdAt": row["created_at"].strftime("%Y-%m-%d"),
-        "url": row["url"],
+        "url": row["url"] if pd.notna(row["url"]) else None,
     }
 
 
 @app.get("/posts")
-def get_posts():
+@limiter.limit("30/minute")
+def get_posts(request: Request):
     df = get_df()
     if df.empty:
         return []
@@ -90,7 +101,8 @@ def get_posts():
 
 
 @app.get("/stats")
-def get_stats():
+@limiter.limit("30/minute")
+def get_stats(request: Request):
     df = get_df()
     if df.empty:
         return {
@@ -134,7 +146,8 @@ def get_stats():
 
 
 @app.get("/daily-sentiment")
-def get_daily_sentiment(days: int = 30):
+@limiter.limit("30/minute")
+def get_daily_sentiment(request: Request, days: int = 30):
     df = get_df()
     if df.empty:
         return []
@@ -159,7 +172,8 @@ def get_daily_sentiment(days: int = 30):
 
 
 @app.get("/top-posts")
-def get_top_posts(limit: int = 8):
+@limiter.limit("30/minute")
+def get_top_posts(request: Request, limit: int = 8):
     df = get_df()
     if df.empty:
         return {"positive": [], "negative": []}
